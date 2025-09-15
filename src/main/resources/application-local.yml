@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: spring-ai-alibaba-qwq-chat-client-example
+  ai:
+    dashscope:
+      api-key: sk-7503138807d64315a5ecdc8150fa692b
+      chat:
+        options:
+          model: qwen-plus
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: deepseek-r1:7b
+
