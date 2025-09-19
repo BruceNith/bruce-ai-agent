@@ -3,6 +3,8 @@ package com.bruce.bruceaiagent.app;
 import com.bruce.bruceaiagent.advisor.MyLoggerAdvisor;
 import com.bruce.bruceaiagent.advisor.ReReadingAdvisor;
 import com.bruce.bruceaiagent.chatMemory.FileBasedChatMemory;
+import com.bruce.bruceaiagent.rag.LoveAppRagCustomAdvisorFactory;
+import com.bruce.bruceaiagent.rag.QueryRewriter;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -37,6 +39,12 @@ public class LoveApp {
 
     @Resource
     private Advisor loveAppRagCloudAdvisor;
+
+    @Resource
+    private VectorStore pgVectorVectorStore;
+
+    @Resource
+    private QueryRewriter queryRewriter;
 
     /**
      * 创建基于Dashscope的ChatClient实例
@@ -107,25 +115,34 @@ public class LoveApp {
 
     /**
      * 和 RAG 知识库进行对话
-     * 第一种方式：基于内存
+     *
      * @param message
      * @param chatId
      * @return
      */
     public String doChatWithRag(String message, String chatId) {
+        // 查询重写
+        String rewritenMessage = queryRewriter.doQueryRewrite(message);
+
         ChatResponse chatResponse = chatClient
                 .prompt()
-                .user(message)
+                // 使用改写后的查询
+                .user(rewritenMessage)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
                 // 开启日志，便于观察效果
                 .advisors(new MyLoggerAdvisor())
                 // 应用 RAG 知识库问答
-//                .advisors(new QuestionAnswerAdvisor(loveAppVectorStore))
+                .advisors(new QuestionAnswerAdvisor(loveAppVectorStore))
                 // 应用 RAG 检索增强服务 （基于云知识库服务）
-                .advisors(loveAppRagCloudAdvisor)
+//                .advisors(loveAppRagCloudAdvisor)
+                // 应用 RAG 检索增强服务 （基于 Pgvector 知识库服务）  使用阿里云 Pgvector 服务时要开启弹性收费模式 不然会按小时计费一直扣钱
+//                .advisors( new QuestionAnswerAdvisor(pgVectorVectorStore))
+                // 自定义 RAG 检索增强服务（文档查询器 + 上下文增强器）
+//                .advisors(
+//                        LoveAppRagCustomAdvisorFactory.createLoveAppRagCustomAdvisor(pgVectorVectorStore, "单身")
+//                )
                 .call()
-
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();
         log.info("content: {}", content);

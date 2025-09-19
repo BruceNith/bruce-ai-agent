@@ -1,14 +1,39 @@
 spring:
+  datasource:
+    # PostgreSQL数据库连接URL
+    url: jdbc:postgresql://rm-cn-1wy4fzxv20004zko.rwlb.rds.aliyuncs.com:5432/bruce_ai_agent
+    # 数据库用户名
+    username: uer_nith
+    # 数据库密码
+    password: 5020nth!
+
   application:
+    # 应用名称
     name: spring-ai-alibaba-qwq-chat-client-example
   ai:
+    # 阿里云DashScope配置
     dashscope:
+      # DashScope API密钥
       api-key: sk-7503138807d64315a5ecdc8150fa692b
       chat:
         options:
+          # 使用的模型名称
           model: qwen-plus
+    # Ollama配置
     ollama:
+      # Ollama服务的基础URL
       base-url: http://localhost:11434
       chat:
+        # 使用的模型名称
         model: deepseek-r1:7b
-
+    # 向量存储配置
+    vectorstore:
+      pgvector:
+        # 索引类型
+        index-type: hnsw 
+        # 向量维度
+        dimensions: 1536
+        # 距离计算类型
+        distance-type: cosine_distance
+        # 每批次最大文档数
+        max-document-batch-size: 1000 # Optional: Maximum number of documents per batch
