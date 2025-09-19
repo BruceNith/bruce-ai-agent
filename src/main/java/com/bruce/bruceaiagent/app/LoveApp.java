@@ -5,6 +5,7 @@ import com.bruce.bruceaiagent.advisor.ReReadingAdvisor;
 import com.bruce.bruceaiagent.chatMemory.FileBasedChatMemory;
 import com.bruce.bruceaiagent.rag.LoveAppRagCustomAdvisorFactory;
 import com.bruce.bruceaiagent.rag.QueryRewriter;
+import com.bruce.bruceaiagent.tools.ToolRegistration;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -15,6 +16,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
@@ -69,6 +71,21 @@ public class LoveApp {
     }
 
     /**
+     * 确保输入消息不超过DashScope API的最大长度限制(129024个字符)
+     * @param message 原始输入消息
+     * @return 截断后的消息（如果需要）
+     */
+    private String ensureInputLength(String message) {
+        final int MAX_INPUT_LENGTH = 129024;
+        if (message != null && message.length() > MAX_INPUT_LENGTH) {
+            log.warn("Input message length ({}) exceeds maximum allowed length ({}). Truncating message.", 
+                    message.length(), MAX_INPUT_LENGTH);
+            return message.substring(0, MAX_INPUT_LENGTH);
+        }
+        return message;
+    }
+
+    /**
      * AI 基础对话（支持多轮对话记忆）
      *
      * @param message
@@ -76,6 +93,9 @@ public class LoveApp {
      * @return
      */
     public String doChat(String message, String chatId) {
+        // 限制输入消息长度，防止超出DashScope API限制(129024个字符)
+        message = ensureInputLength(message);
+        
         ChatResponse response = chatClient
                 .prompt()
                 .user(message)
@@ -101,6 +121,9 @@ public class LoveApp {
      * @return
      */
     public LoveReport doChatWithReport(String message, String chatId) {
+        // 限制输入消息长度，防止超出DashScope API限制(129024个字符)
+        message = ensureInputLength(message);
+        
         LoveReport loveReport = chatClient
                 .prompt()
                 .system(SYSTEM_PROMPT + "每次对话后都要生成恋爱结果，标题为{用户名}的恋爱报告，内容为建议列表")
@@ -121,6 +144,9 @@ public class LoveApp {
      * @return
      */
     public String doChatWithRag(String message, String chatId) {
+        // 限制输入消息长度，防止超出DashScope API限制(129024个字符)
+        message = ensureInputLength(message);
+        
         // 查询重写
         String rewritenMessage = queryRewriter.doQueryRewrite(message);
 
@@ -148,4 +174,37 @@ public class LoveApp {
         log.info("content: {}", content);
         return content;
     }
+
+
+    // AI 库调用工具
+    @Resource
+    private ToolCallback[] allTools;
+
+    /**
+     * AI 恋爱报告功能（支持工具调用 ）
+     *
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public String doChatWithTools(String message, String chatId) {
+        // 限制输入消息长度，防止超出DashScope API限制(129024个字符)
+        message = ensureInputLength(message);
+        
+        ChatResponse response = chatClient
+                .prompt()
+                .user(message)
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                // 开启日志，便于观察效果
+                .advisors(new MyLoggerAdvisor())
+                .tools(allTools)
+                .call()
+                .chatResponse();
+        String content = response.getResult().getOutput().getText();
+        log.info("content: {}", content);
+        return content;
+    }
+
+
 }

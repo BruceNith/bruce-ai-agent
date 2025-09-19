@@ -37,3 +37,8 @@ spring:
         distance-type: cosine_distance
         # 每批次最大文档数
         max-document-batch-size: 1000 # Optional: Maximum number of documents per batch
+
+
+# searchAPI
+search-api:
+  api-key: hXCNFNkUZAdVnom6HkrnFFSE
