@@ -23,9 +23,14 @@ public class ToolRegistration {
         ResourceDownloadTool resourceDownloadTool = new ResourceDownloadTool();
         TerminalOperationTool terminalOperationTool = new TerminalOperationTool();
         PDFGenerationTool pdfGenerationTool = new PDFGenerationTool();
+        ExaWebSearchTool exaWebSearchTool = new ExaWebSearchTool(searchApiKey);
+        GoogleWebSearchTool googleWebSearchTool = new GoogleWebSearchTool(searchApiKey);
+//        ZhipuWebSearchTool zhipuWebSearchTool = new ZhipuWebSearchTool(searchApiKey);  // 智谱的搜索 按需加载
         return ToolCallbacks.from(
             fileOperationTool,
             webSearchTool,
+//            exaWebSearchTool,     // 这2个是上面webSearchTool的替代品 在上面那个使用不佳的使用使用
+//            googleWebSearchTool,
             webScrapingTool,
             resourceDownloadTool,
             terminalOperationTool,
