@@ -26,6 +26,16 @@ spring:
       chat:
         # 使用的模型名称
         model: deepseek-r1:7b
+
+    mcp:
+      client:
+        sse:
+          connections:
+            serverl:
+              url: http://localhost:8127
+#        stdio:
+#          servers-configuration: classpath:mcp-servers.json
+
     # 向量存储配置
     vectorstore:
       pgvector:
